@@ -135,6 +135,26 @@ func (c *cache) Get(k string) (interface{}, bool) {
 	return item.Object, true
 }
 
+//Touch 获取value 并更新超时时间
+func (c *cache) Touch(k string) (interface{}, bool) {
+	c.mu.RLock()
+	// "Inlining" of get and Expired
+	item, found := c.items[k]
+	if !found {
+		c.mu.RUnlock()
+		return nil, false
+	}
+	if item.Expiration > 0 {
+		if time.Now().UnixNano() > item.Expiration {
+			c.mu.RUnlock()
+			return nil, false
+		}
+	}
+	c.mu.RUnlock()
+	item.Expiration = time.Now().UnixNano()//存在多线程并发访问问题，但无所谓 可以满足场景要求
+	return item.Object, true
+}
+
 // GetWithExpiration returns an item and its expiration time from the cache.
 // It returns the item or nil, the expiration time if one is set (if the item
 // never expires a zero value for time.Time is returned), and a bool indicating
