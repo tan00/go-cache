@@ -151,7 +151,8 @@ func (c *cache) Touch(k string) (interface{}, bool) {
 		}
 	}
 	c.mu.RUnlock()
-	item.Expiration = time.Now().UnixNano()//存在多线程并发访问问题，但无所谓 可以满足场景要求
+	//存在多线程并发访问问题，但无所谓 可以满足场景要求
+	item.Expiration = time.Now().Add(c.defaultExpiration).UnixNano()
 	return item.Object, true
 }
 
